@@ -82,7 +82,8 @@ dialog::backdrop{background:#11182788}
 <dialog id="editDialog">
   <div class="modal-head"><h2 id="dialogTitle">Add infographic</h2><button class="close-x" id="closeDialog" aria-label="Close">×</button></div>
   <form id="editForm" class="modal-body">
-    <div class="field"><label for="title">Infographic name *</label><input id="title" maxlength="120" required placeholder="e.g. Simple Daily Exercise"><div class="help">Enter a meaningful title. The image itself is kept when you change only this field.</div></div>
+    <div class="field"><label for="title">Subtitle / searchable name *</label><input id="title" maxlength="120" required placeholder="e.g. Shoulder Recovery Exercises"><div class="help">Edit this subtitle to give the infographic a name you can search. The image is kept unchanged.</div></div>
+    <div class="field"><label for="originalName">Original image name (read-only)</label><input id="originalName" readonly aria-readonly="true"><div class="help">This original reference is not changed when you edit the subtitle.</div></div>
     <div class="field"><label for="category">Category *</label><div style="display:flex;gap:8px"><select id="category" required style="flex:1"><option value="Self-help">Self-help</option><option value="Exercise">Exercise</option><option value="General">General</option></select><button type="button" class="btn secondary" id="newCategoryBtn">＋ New</button></div><div class="help">Choose a category. Use “New” only when you want to add another category.</div></div>
     <div class="field"><label for="imageFile">Replace infographic image (optional)</label><input id="imageFile" type="file" accept="image/*"><div class="help" id="fileHelp">When editing a title or category, leave this empty to keep the existing image. Choose a new image only if you want to replace it.</div></div>
     <div class="modal-actions"><button type="button" class="btn secondary" id="cancelEdit">Cancel</button><button class="btn" type="submit" id="saveBtn">Save infographic</button></div>
@@ -208,6 +209,7 @@ dialog::backdrop{background:#11182788}
       const record = {
         id: old ? old.id : ('inf-'+Date.now()+'-'+Math.random().toString(36).slice(2,8)),
         title, category, image,
+        originalName: old ? (old.originalName || old.sourceName || '(original filename not recorded)') : (file ? file.name : 'Imported photo'),
         createdAt: old ? old.createdAt : Date.now(),
         updatedAt: Date.now()
       };
