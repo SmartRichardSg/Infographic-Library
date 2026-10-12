@@ -84,7 +84,7 @@ dialog::backdrop{background:#11182788}
   <form id="editForm" class="modal-body">
     <div class="field"><label for="title">Infographic name *</label><input id="title" maxlength="120" required placeholder="e.g. Simple Daily Exercise"></div>
     <div class="field"><label for="category">Category *</label><div style="display:flex;gap:8px"><select id="category" required style="flex:1"><option value="Self-help">Self-help</option><option value="Exercise">Exercise</option><option value="General">General</option></select><button type="button" class="btn secondary" id="newCategoryBtn">＋ New</button></div><div class="help">Choose a category. Use “New” only when you want to add another category.</div></div>
-    <div class="field"><label for="imageFile">Choose infographic image *</label><input id="imageFile" type="file" accept="image/*"><div class="help" id="fileHelp">Choose an image from Photos or Files. Existing image stays if you are only editing the name or category.</div></div>
+    <div class="field"><label for="imageFile">Replace infographic image (optional)</label><input id="imageFile" type="file" accept="image/*"><div class="help" id="fileHelp">When editing a title or category, leave this empty to keep the existing image. Choose a new image only if you want to replace it.</div></div>
     <div class="modal-actions"><button type="button" class="btn secondary" id="cancelEdit">Cancel</button><button class="btn" type="submit" id="saveBtn">Save infographic</button></div>
   </form>
 </dialog>
@@ -200,10 +200,18 @@ dialog::backdrop{background:#11182788}
     if(file&&!file.type.startsWith('image/')){alert('Please choose an image file.');return;}
     $('saveBtn').disabled=true;$('saveBtn').textContent='Saving…';
     try{
-      const image=file?await compressIfNeeded(file):old.image;
-      await putItem({id:old?.id||('inf-'+Date.now()+'-'+Math.random().toString(36).slice(2,8)),title,category,image,createdAt:old?.createdAt||Date.now(),updatedAt:Date.now()});
+      // Critical: preserve the original image Blob when only the title/category changes.
+      const image = file ? await compressIfNeeded(file) : (old ? old.image : null);
+      if(!image){alert('Please choose an infographic image.');return;}
+      const record = {
+        id: old ? old.id : ('inf-'+Date.now()+'-'+Math.random().toString(36).slice(2,8)),
+        title, category, image,
+        createdAt: old ? old.createdAt : Date.now(),
+        updatedAt: Date.now()
+      };
+      await putItem(record);
       dialog.close();await refresh();
-    }catch(err){alert('Could not save this image. Your browser may be out of storage. Try a smaller image.');}
+    }catch(err){alert('Could not save this infographic. The existing image should remain unchanged. Try again, or restore from your backup if needed.');}
     finally{$('saveBtn').disabled=false;$('saveBtn').textContent=old?'Save changes':'Save infographic';}
   });
   $('newCategoryBtn').onclick=createCategory;
