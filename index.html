@@ -7,7 +7,6 @@
 <title>Infographic Library</title>
 <link rel="icon" href="icon.png" type="image/png">
 <link rel="apple-touch-icon" href="icon.png">
-<link rel="icon" href="data:image/svg+xml,%3Csvg xmlns='http://www.w3.org/2000/svg' viewBox='0 0 100 100'%3E%3Crect width='100' height='100' rx='22' fill='%232f6fed'/%3E%3Crect x='23' y='20' width='54' height='60' rx='6' fill='white'/%3E%3Cpath d='M33 35h34M33 46h24M33 57h29M33 68h18' stroke='%232f6fed' stroke-width='5' stroke-linecap='round'/%3E%3C/svg%3E">
 <style>
 :root{--bg:#f4f7fb;--card:#fff;--ink:#1f2937;--muted:#667085;--blue:#2f6fed;--line:#dfe5ef;--soft:#eaf0ff}
 *{box-sizing:border-box}
@@ -17,7 +16,7 @@ button{cursor:pointer}
 header{padding:22px 16px 16px;background:linear-gradient(135deg,#eaf0ff,#f7f9ff);border-bottom:1px solid var(--line)}
 .wrap{max-width:900px;margin:0 auto}
 h1{font-size:clamp(25px,5vw,34px);margin:0 0 5px;letter-spacing:-.5px}
-.subtitle{margin:0;color:var(--muted);font-size:14px}
+.subtitle-head{margin:0;color:var(--muted);font-size:14px}
 main{max-width:900px;margin:0 auto;padding:16px}
 .toolbar{display:grid;grid-template-columns:1fr 1fr;gap:10px;margin-bottom:12px}
 input,select{width:100%;padding:12px;border:1px solid var(--line);border-radius:12px;background:#fff;color:var(--ink);min-width:0}
@@ -31,10 +30,11 @@ input,select{width:100%;padding:12px;border:1px solid var(--line);border-radius:
 .list{display:grid;grid-template-columns:repeat(auto-fill,minmax(245px,1fr));gap:12px}
 .item{background:var(--card);border:1px solid var(--line);border-radius:16px;overflow:hidden;box-shadow:0 2px 7px #1c355508}
 .open-item{display:flex;gap:12px;width:100%;text-align:left;border:0;background:transparent;padding:12px;color:inherit;align-items:center}
-.thumb{width:76px;height:88px;flex:0 0 76px;object-fit:cover;object-position:top;border-radius:9px;background:#edf1f7}
-.item-title{font-weight:700;line-height:1.3;overflow-wrap:anywhere}
+.thumb{width:112px;height:126px;flex:0 0 112px;object-fit:contain;object-position:center;border-radius:9px;background:#edf1f7}
+.item-title{font-weight:750;line-height:1.3;overflow-wrap:anywhere}
+.original{font-size:11px;color:var(--muted);margin-top:5px;overflow-wrap:anywhere}
 .category{display:inline-block;background:var(--soft);color:#3157a4;border-radius:20px;padding:3px 8px;font-size:12px;margin-top:7px}
-.item-actions{display:flex;gap:7px;padding:0 12px 12px 100px}
+.item-actions{display:flex;gap:7px;padding:0 12px 12px 136px;flex-wrap:wrap}
 .empty{background:#fff;border:1px dashed #c8d2e2;border-radius:16px;padding:26px;text-align:center;color:var(--muted)}
 .note{font-size:13px;color:var(--muted);margin:18px 0 4px}
 dialog{border:0;border-radius:18px;padding:0;width:min(540px,calc(100% - 24px));box-shadow:0 20px 70px #14213d44}
@@ -59,11 +59,11 @@ dialog::backdrop{background:#11182788}
 </style>
 </head>
 <body>
-<header><div class="wrap"><h1>Infographic Library</h1><p class="subtitle">Keep your infographics organised and easy to find.</p></div></header>
+<header><div class="wrap"><h1>Infographic Library</h1><p class="subtitle-head">Your images stay unchanged. Add your own subtitle to find each infographic easily.</p></div></header>
 <main>
   <div class="toolbar">
-    <input id="search" class="search" type="search" placeholder="Search names or categories…" aria-label="Search infographics">
-    <select id="sortBy" aria-label="Sort list"><option value="name">Sort by name</option><option value="category">Sort by category</option><option value="newest">Sort by newest added</option></select>
+    <input id="search" class="search" type="search" placeholder="Search subtitles or categories…" aria-label="Search infographics">
+    <select id="sortBy" aria-label="Sort list"><option value="subtitle">Sort by subtitle</option><option value="category">Sort by category</option><option value="newest">Sort by newest added</option></select>
     <select id="order" aria-label="Sort order"><option value="asc">A to Z</option><option value="desc">Z to A</option></select>
   </div>
   <div class="buttons">
@@ -76,17 +76,17 @@ dialog::backdrop{background:#11182788}
   </div>
   <p class="summary" id="summary">Loading your library…</p>
   <section class="list" id="list" aria-live="polite"></section>
-  <p class="note">Your catalog is saved in this browser on this device. Use <b>Export backup</b> occasionally to keep a copy, especially before clearing browser data or changing phones.</p>
+  <p class="note"><b>Privacy and backup:</b> Your catalog and images are stored in this browser on this device. Export a backup regularly. Replacing the website file should not delete this browser database.</p>
 </main>
 
 <dialog id="editDialog">
   <div class="modal-head"><h2 id="dialogTitle">Add infographic</h2><button class="close-x" id="closeDialog" aria-label="Close">×</button></div>
   <form id="editForm" class="modal-body">
-    <div class="field"><label for="title">Subtitle / searchable name *</label><input id="title" maxlength="120" required placeholder="e.g. Shoulder Recovery Exercises"><div class="help">Edit this subtitle to give the infographic a name you can search. The image is kept unchanged.</div></div>
-    <div class="field"><label for="originalName">Original image name (read-only)</label><input id="originalName" readonly aria-readonly="true"><div class="help">This original reference is not changed when you edit the subtitle.</div></div>
-    <div class="field"><label for="category">Category *</label><div style="display:flex;gap:8px"><select id="category" required style="flex:1"><option value="Self-help">Self-help</option><option value="Exercise">Exercise</option><option value="General">General</option></select><button type="button" class="btn secondary" id="newCategoryBtn">＋ New</button></div><div class="help">Choose a category. Use “New” only when you want to add another category.</div></div>
-    <div class="field"><label for="imageFile">Replace infographic image (optional)</label><input id="imageFile" type="file" accept="image/*"><div class="help" id="fileHelp">When editing a title or category, leave this empty to keep the existing image. Choose a new image only if you want to replace it.</div></div>
-    <div class="modal-actions"><button type="button" class="btn secondary" id="cancelEdit">Cancel</button><button class="btn" type="submit" id="saveBtn">Save infographic</button></div>
+    <div class="field"><label for="subtitle">Subtitle / searchable name</label><input id="subtitle" maxlength="120" placeholder="e.g. Secret of Success"><div class="help">Enter your own descriptive name. This is separate from the original image and internal reference.</div></div>
+    <div class="field"><label for="originalRef">Original reference (read-only)</label><input id="originalRef" readonly aria-readonly="true"><div class="help">This reference is preserved. Changing the subtitle will not rename or replace the image.</div></div>
+    <div class="field"><label for="category">Category *</label><div style="display:flex;gap:8px"><select id="category" required style="flex:1"><option>Self-help</option><option>Exercise</option><option>General</option></select><button type="button" class="btn secondary" id="newCategoryBtn">＋ New</button></div></div>
+    <div class="field"><label for="imageFile">Image (only choose if adding or replacing)</label><input id="imageFile" type="file" accept="image/*"><div class="help" id="fileHelp">When editing an entry, leave this empty to keep the existing image.</div></div>
+    <div class="modal-actions"><button type="button" class="btn secondary" id="cancelEdit">Cancel</button><button class="btn" type="submit" id="saveBtn">Save</button></div>
   </form>
 </dialog>
 
@@ -94,207 +94,196 @@ dialog::backdrop{background:#11182788}
   <div class="modal-head"><h2>Import multiple photos</h2><button class="close-x" id="closeBatch" aria-label="Close">×</button></div>
   <div class="modal-body">
     <p id="batchCount">Photos selected</p>
-    <div class="field"><label for="batchCategory">Category for these photos</label><select id="batchCategory" style="width:100%"><option value="Self-help">Self-help</option><option value="Exercise">Exercise</option><option value="General">General</option></select></div>
-    <p class="help">Each photo becomes its own entry. The filename is used as the initial title when available; you can edit titles later.</p>
-    <div class="modal-actions"><button class="btn secondary" id="cancelBatch">Cancel</button><button class="btn" id="confirmBatch">Import photos</button></div>
+    <div class="field"><label for="batchCategory">Category for these photos</label><select id="batchCategory" style="width:100%"><option>Self-help</option><option>Exercise</option><option>General</option></select></div>
+    <p class="help">Each photo becomes its own entry. Subtitles are left blank for you to add later. You can also edit them one at a time.</p>
+    <div class="modal-actions"><button type="button" class="btn secondary" id="cancelBatch">Cancel</button><button class="btn" id="confirmBatch">Import photos</button></div>
   </div>
 </dialog>
 
 <div id="viewer" role="dialog" aria-modal="true" aria-label="Infographic viewer">
   <div class="viewerbar"><button id="backBtn">← Back</button><div id="viewTitle"></div><button id="fullBtn">Fit</button></div>
   <div id="viewImageWrap"><img id="viewImage" alt="Selected infographic"></div>
-  <div class="viewer-bottom">Tap Back to return to your library. Pinch to zoom if your browser supports it.</div>
+  <div class="viewer-bottom">Tap Back to return to your library.</div>
 </div>
 
 <script>
 (() => {
+  'use strict';
   const DB_NAME='infographic-library-db', DB_VERSION=1, STORE='items';
-  let db, items=[], editingId=null, currentObjectUrl=null, viewerOpen=false, fitMode=true, batchSelection=[];
-  let customCategories = JSON.parse(localStorage.getItem('infographic-custom-categories') || '[]');
-  const baseCategories = ['Self-help','Exercise','General'];
   const $=id=>document.getElementById(id);
-  const list=$('list'), dialog=$('editDialog'), form=$('editForm');
-  const openDB=()=>new Promise((resolve,reject)=>{
-    const req=indexedDB.open(DB_NAME,DB_VERSION);
-    req.onupgradeneeded=()=>{const d=req.result;if(!d.objectStoreNames.contains(STORE))d.createObjectStore(STORE,{keyPath:'id'});};
-    req.onsuccess=()=>resolve(req.result);req.onerror=()=>reject(req.error);
-  });
-  const allItems=()=>new Promise((resolve,reject)=>{const r=db.transaction(STORE,'readonly').objectStore(STORE).getAll();r.onsuccess=()=>resolve(r.result||[]);r.onerror=()=>reject(r.error);});
-  const putItem=item=>new Promise((resolve,reject)=>{const tx=db.transaction(STORE,'readwrite');tx.objectStore(STORE).put(item);tx.oncomplete=resolve;tx.onerror=()=>reject(tx.error);});
-  const deleteItem=id=>new Promise((resolve,reject)=>{const tx=db.transaction(STORE,'readwrite');tx.objectStore(STORE).delete(id);tx.oncomplete=resolve;tx.onerror=()=>reject(tx.error);});
+  const baseCategories=['Self-help','Exercise','General'];
+  let db=null, items=[], editingId=null, batchSelection=[], currentObjectUrl=null, viewerOpen=false, fitMode=true;
+  let customCategories=[];
+  try { customCategories=JSON.parse(localStorage.getItem('infographic-custom-categories')||'[]'); if(!Array.isArray(customCategories))customCategories=[]; } catch(e){customCategories=[];}
+  const dialog=$('editDialog'), form=$('editForm'), list=$('list');
+
   function esc(s){return String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));}
-  function blobUrl(blob){return URL.createObjectURL(blob);}
-  async function refresh(){
-    items=await allItems();
-    const cats=[...new Set([...baseCategories,...customCategories,...items.map(x=>x.category).filter(Boolean)])].sort((a,b)=>a.localeCompare(b));
-    populateCategorySelect($('category'), cats);
-    populateCategorySelect($('batchCategory'), cats);
-    render();
-  }
-  function populateCategorySelect(select, cats){
-    if(!select) return;
-    const previous=select.value;
-    select.innerHTML=cats.map(c=>`<option value="${esc(c)}">${esc(c)}</option>`).join('');
-    if(cats.includes(previous)) select.value=previous;
-  }
-  function createCategory(){
-    const name=prompt('New category name:');
-    if(!name || !name.trim()) return;
-    const clean=name.trim();
-    if(clean.length>60){alert('Please keep category names to 60 characters or fewer.');return;}
-    if(![...baseCategories,...customCategories].some(c=>c.toLocaleLowerCase()===clean.toLocaleLowerCase())){
-      customCategories.push(clean);
-      localStorage.setItem('infographic-custom-categories',JSON.stringify(customCategories));
-    }
-    refresh().then(()=>{$('category').value=clean;$('batchCategory').value=clean;});
-  }
-  async function thumbnail(blob){
-    if(!blob)return '';
-    return blobUrl(blob);
-  }
-  async function render(){
+  function openDB(){return new Promise((resolve,reject)=>{
+    const req=indexedDB.open(DB_NAME,DB_VERSION);
+    req.onupgradeneeded=()=>{if(!req.result.objectStoreNames.contains(STORE))req.result.createObjectStore(STORE,{keyPath:'id'});};
+    req.onsuccess=()=>resolve(req.result);req.onerror=()=>reject(req.error);
+  });}
+  function allItems(){return new Promise((resolve,reject)=>{const r=db.transaction(STORE,'readonly').objectStore(STORE).getAll();r.onsuccess=()=>resolve(r.result||[]);r.onerror=()=>reject(r.error);});}
+  function putItem(item){return new Promise((resolve,reject)=>{
+    const tx=db.transaction(STORE,'readwrite');tx.objectStore(STORE).put(item);tx.oncomplete=resolve;tx.onerror=()=>reject(tx.error);tx.onabort=()=>reject(tx.error||new Error('Save aborted'));
+  });}
+  function deleteItem(id){return new Promise((resolve,reject)=>{const tx=db.transaction(STORE,'readwrite');tx.objectStore(STORE).delete(id);tx.oncomplete=resolve;tx.onerror=()=>reject(tx.error);});}
+  function allCategories(){return [...new Set([...baseCategories,...customCategories,...items.map(x=>x.category).filter(Boolean)])].sort((a,b)=>a.localeCompare(b));}
+  function populateSelect(select, cats, preferred){const previous=preferred??select.value;select.innerHTML=cats.map(c=>`<option value="${esc(c)}">${esc(c)}</option>`).join('');if(cats.includes(previous))select.value=previous;}
+  async function refresh(){items=await allItems();populateSelect($('category'),allCategories());populateSelect($('batchCategory'),allCategories());render();}
+  function imageBlob(item){return item && item.image instanceof Blob ? item.image : null;}
+  function makeUrl(blob){return URL.createObjectURL(blob);}
+  function render(){
     const q=$('search').value.trim().toLocaleLowerCase(), sort=$('sortBy').value, order=$('order').value;
-    let filtered=items.filter(x=>x.title.toLocaleLowerCase().includes(q)||x.category.toLocaleLowerCase().includes(q));
+    const filtered=items.filter(x=>(x.subtitle||'').toLocaleLowerCase().includes(q)||(x.category||'').toLocaleLowerCase().includes(q));
     filtered.sort((a,b)=>{
-      let v=sort==='category'?(a.category.localeCompare(b.category)||a.title.localeCompare(b.title)):sort==='newest'?(b.createdAt-a.createdAt):(a.title.localeCompare(b.title));
+      let v=sort==='category'?((a.category||'').localeCompare(b.category||'')||(a.subtitle||'').localeCompare(b.subtitle||'')):sort==='newest'?(Number(b.createdAt||0)-Number(a.createdAt||0)):((a.subtitle||'').localeCompare(b.subtitle||''));
       return order==='desc'?-v:v;
     });
     $('summary').textContent=`${filtered.length} infographic${filtered.length===1?'':'s'}${q?' found':''} · ${items.length} saved`;
     if(!filtered.length){list.innerHTML=`<div class="empty">${items.length?'No matching infographics. Try another search.':'<b>Your library is ready.</b><br>Add your first infographic using the button above.'}</div>`;return;}
     list.innerHTML='';
-    for(const item of filtered){
+    filtered.forEach(item=>{
       const card=document.createElement('article');card.className='item';
-      const btn=document.createElement('button');btn.className='open-item';btn.type='button';btn.setAttribute('aria-label','Open '+item.title);
-      const img=document.createElement('img');img.className='thumb';img.alt='';img.src=await thumbnail(item.image);
-      const info=document.createElement('div');info.innerHTML=`<div class="item-title">${esc(item.title||'Untitled infographic')}</div><div class="help">Original: ${esc(item.originalName||item.sourceName||'Imported photo')}</div><span class="category">${esc(item.category)}</span>`;
-      btn.append(img,info);btn.addEventListener('click',()=>openViewer(item.id));
+      const open=document.createElement('button');open.className='open-item';open.type='button';open.setAttribute('aria-label','Open '+(item.subtitle||'infographic'));
+      const img=document.createElement('img');img.className='thumb';img.alt='Infographic thumbnail';
+      const blob=imageBlob(item);
+      if(blob)img.src=makeUrl(blob);else{img.alt='Image unavailable';img.style.display='none';}
+      const info=document.createElement('div');
+      const subtitle=document.createElement('div');subtitle.className='item-title';subtitle.textContent=item.subtitle||'＋ Add subtitle';
+      const ref=document.createElement('div');ref.className='original';ref.textContent='Original reference preserved';
+      const cat=document.createElement('span');cat.className='category';cat.textContent=item.category||'General';
+      info.append(subtitle,ref,cat);open.append(img,info);
+      open.addEventListener('click',()=>openViewer(item.id));
       const actions=document.createElement('div');actions.className='item-actions';
       const edit=document.createElement('button');edit.className='btn secondary small';edit.textContent='Edit';edit.onclick=()=>showEditor(item.id);
-      const del=document.createElement('button');del.className='btn danger small';del.textContent='Delete';del.onclick=async()=>{if(confirm(`Delete “${item.title}” from this library?`)){await deleteItem(item.id);await refresh();}};
-      actions.append(edit,del);card.append(btn,actions);list.append(card);
-    }
+      const del=document.createElement('button');del.className='btn danger small';del.textContent='Delete';del.onclick=async()=>{if(confirm('Delete this infographic from the library?')){await deleteItem(item.id);await refresh();}};
+      actions.append(edit,del);card.append(open,actions);list.append(card);
+    });
   }
   function showEditor(id=null){
-    editingId=id;form.reset();$('fileHelp').textContent='Choose a new image only if you want to replace the current infographic. Leave this empty to keep the current image.';
+    editingId=id;form.reset();
     const item=id?items.find(x=>x.id===id):null;
+    if(id&&!item){alert('This entry could not be found. Please refresh the library and try again.');return;}
     $('dialogTitle').textContent=item?'Edit infographic':'Add infographic';
-    $('title').value=item?.title||'';
-    $('originalName').value=item?.originalName || item?.sourceName || '(original filename not recorded)';
-    if(item && item.category && ![...baseCategories,...customCategories].includes(item.category)){
-      customCategories.push(item.category);localStorage.setItem('infographic-custom-categories',JSON.stringify(customCategories));
-    }
-    populateCategorySelect($('category'), [...new Set([...baseCategories,...customCategories,...items.map(x=>x.category).filter(Boolean)])]);
-    $('category').value=item?.category||'General';
+    $('subtitle').value=item?.subtitle||'';
+    // Do not expose or alter the opaque legacy title as the editable subtitle.
+    $('originalRef').value=item ? (item.originalName||item.sourceName||item.title||item.id||'Stored image') : 'Assigned when saved';
+    populateSelect($('category'),allCategories(),item?.category||'General');
     $('imageFile').required=!item;
-    $('saveBtn').textContent=item?'Save changes':'Save infographic';
-    dialog.showModal();setTimeout(()=>$('title').focus(),50);
+    $('imageFile').value='';
+    $('fileHelp').textContent=item?'Leave this empty to keep the existing image unchanged.':'Choose the infographic image to add.';
+    $('saveBtn').textContent=item?'Save changes':'Add infographic';
+    dialog.showModal();
   }
-  async function compressIfNeeded(file){
-    // Keep original image quality and dimensions; store the selected image in IndexedDB.
-    return file;
+  function createCategory(){
+    const raw=prompt('New category name:');if(!raw||!raw.trim())return;
+    const name=raw.trim();if(name.length>60){alert('Keep category names to 60 characters or fewer.');return;}
+    if(!allCategories().some(c=>c.toLocaleLowerCase()===name.toLocaleLowerCase())){customCategories.push(name);localStorage.setItem('infographic-custom-categories',JSON.stringify(customCategories));}
+    populateSelect($('category'),allCategories(),name);populateSelect($('batchCategory'),allCategories(),name);
   }
   form.addEventListener('submit',async e=>{
     e.preventDefault();
-    const title=$('title').value.trim(),category=$('category').value.trim(),file=$('imageFile').files[0];
-    if(!title||!category){alert('Please enter a name and category.');return;}
+    const subtitle=$('subtitle').value.trim(), category=$('category').value||'General', file=$('imageFile').files[0]||null;
     const old=editingId?items.find(x=>x.id===editingId):null;
-    if(editingId && !old){alert('This catalog entry could not be found. Please close the editor and try again.');return;}
+    if(editingId&&!old){alert('This entry could not be found. Close the editor and try again.');return;}
     if(!old&&!file){alert('Please choose an infographic image.');return;}
     if(file&&!file.type.startsWith('image/')){alert('Please choose an image file.');return;}
-    $('saveBtn').disabled=true;$('saveBtn').textContent='Saving…';
+    const button=$('saveBtn');button.disabled=true;button.textContent='Saving…';
     try{
-      // Critical: preserve the original image Blob when only the title/category changes.
-      const image = file ? await compressIfNeeded(file) : (old ? old.image : null);
-      if(!image){alert('Please choose an infographic image.');return;}
-      const record = {
-        id: old ? old.id : ('inf-'+Date.now()+'-'+Math.random().toString(36).slice(2,8)),
-        title, category, image,
-        originalName: old ? (old.originalName || old.sourceName || '(original filename not recorded)') : (file ? file.name : 'Imported photo'),
-        createdAt: old ? old.createdAt : Date.now(),
-        updatedAt: Date.now()
+      const image=file?file:imageBlob(old);
+      if(!image){alert('The existing image is missing from this entry. Please choose the original photo again.');return;}
+      // Keep all existing fields and the original image when editing. Only subtitle/category change.
+      const record=old?{...old,subtitle,category,updatedAt:Date.now()}:{
+        id:'inf-'+Date.now()+'-'+Math.random().toString(36).slice(2,9),
+        title:file.name||'Imported photo', originalName:file.name||'Imported photo',
+        subtitle,category,image,createdAt:Date.now(),updatedAt:Date.now()
       };
       await putItem(record);
       dialog.close();await refresh();
-    }catch(err){alert('Could not save this infographic. The existing image should remain unchanged. Try again, or restore from your backup if needed.');}
-    finally{$('saveBtn').disabled=false;$('saveBtn').textContent=old?'Save changes':'Save infographic';}
+    }catch(err){console.error(err);alert('Could not save. Your existing image has not intentionally been replaced. Try again.');}
+    finally{button.disabled=false;button.textContent=editingId?'Save changes':'Add infographic';}
   });
+  $('addBtn').onclick=()=>showEditor();
   $('newCategoryBtn').onclick=createCategory;
+  $('closeDialog').onclick=$('cancelEdit').onclick=()=>dialog.close();
+  dialog.addEventListener('click',e=>{if(e.target===dialog)dialog.close();});
+  $('search').addEventListener('input',render);$('sortBy').addEventListener('change',render);$('order').addEventListener('change',render);
+
   $('batchBtn').onclick=()=>$('batchFiles').click();
-  $('batchFiles').onchange=e=>{
+  $('batchFiles').addEventListener('change',e=>{
     batchSelection=Array.from(e.target.files||[]).filter(f=>f.type.startsWith('image/'));
     if(!batchSelection.length){e.target.value='';return;}
     $('batchCount').textContent=`${batchSelection.length} photo${batchSelection.length===1?'':'s'} selected`;
-    populateCategorySelect($('batchCategory'), [...new Set([...baseCategories,...customCategories,...items.map(x=>x.category).filter(Boolean)])]);
-    $('batchCategory').value='General';
-    $('batchDialog').showModal();
-  };
-  function cancelBatch(){ $('batchDialog').close();$('batchFiles').value='';batchSelection=[]; }
+    populateSelect($('batchCategory'),allCategories(),'General');$('batchDialog').showModal();
+  });
+  function cancelBatch(){$('batchDialog').close();$('batchFiles').value='';batchSelection=[];}
   $('closeBatch').onclick=$('cancelBatch').onclick=cancelBatch;
   $('batchDialog').addEventListener('click',e=>{if(e.target===$('batchDialog'))cancelBatch();});
   $('confirmBatch').onclick=async()=>{
     if(!batchSelection.length)return;
     const button=$('confirmBatch');button.disabled=true;button.textContent='Importing…';
+    let success=0;
     try{
       const category=$('batchCategory').value||'General';
       for(const file of batchSelection){
-        const filename=file.name.replace(/\.[^.]+$/,'').replace(/[_-]+/g,' ').trim();
-        await putItem({id:'inf-'+Date.now()+'-'+Math.random().toString(36).slice(2,9),title:filename||'Untitled infographic',category,image:file,createdAt:Date.now(),updatedAt:Date.now()});
+        const originalName=file.name||'Imported photo';
+        await putItem({id:'inf-'+Date.now()+'-'+Math.random().toString(36).slice(2,9),title:originalName,originalName,subtitle:'',category,image:file,createdAt:Date.now(),updatedAt:Date.now()});
+        success++;
       }
-      cancelBatch();await refresh();alert('Photos imported. You can edit each title whenever you are ready.');
-    }catch(err){alert('Some photos could not be imported. Try selecting fewer or smaller images.');}
+      cancelBatch();await refresh();alert(`${success} photo${success===1?'':'s'} imported. Add subtitles whenever you are ready.`);
+    }catch(err){console.error(err);alert(`${success} photo(s) imported before an error. Try importing a smaller batch.`);await refresh();}
     finally{button.disabled=false;button.textContent='Import photos';}
   };
-  $('addBtn').onclick=()=>showEditor();
-  $('closeDialog').onclick=$('cancelEdit').onclick=()=>dialog.close();
-  dialog.addEventListener('click',e=>{if(e.target===dialog)dialog.close();});
-  $('search').addEventListener('input',render);$('sortBy').addEventListener('change',render);$('order').addEventListener('change',render);
 
   function openViewer(id){
     const item=items.find(x=>x.id===id);if(!item)return;
-    $('viewTitle').textContent=item.title;
+    const blob=imageBlob(item);if(!blob){alert('The image data is missing for this entry. Please edit it and select the original photo again.');return;}
+    $('viewTitle').textContent=item.subtitle||'Infographic';
     if(currentObjectUrl)URL.revokeObjectURL(currentObjectUrl);
-    currentObjectUrl=blobUrl(item.image);$('viewImage').src=currentObjectUrl;
-    fitMode=true;$('viewImage').style.maxWidth='100%';$('viewImage').style.maxHeight='100%';$('fullBtn').textContent='Fit';
+    currentObjectUrl=makeUrl(blob);$('viewImage').src=currentObjectUrl;
+    fitMode=true;$('viewImage').style.maxWidth='100%';$('viewImage').style.maxHeight='100%';$('viewImage').style.width='auto';$('viewImage').style.height='auto';$('fullBtn').textContent='Fit';
     $('viewer').classList.add('show');viewerOpen=true;
     history.pushState({infographicViewer:true},'','#view-'+encodeURIComponent(id));
   }
   function closeViewer(useHistory=true){
     if(!viewerOpen)return;
-    $('viewer').classList.remove('show');viewerOpen=false;
-    $('viewImage').removeAttribute('src');
+    $('viewer').classList.remove('show');viewerOpen=false;$('viewImage').removeAttribute('src');
     if(currentObjectUrl){URL.revokeObjectURL(currentObjectUrl);currentObjectUrl=null;}
     if(useHistory&&location.hash.startsWith('#view-'))history.back();
   }
   $('backBtn').onclick=()=>closeViewer(true);
-  $('fullBtn').onclick=()=>{fitMode=!fitMode;if(fitMode){$('viewImage').style.maxWidth='100%';$('viewImage').style.maxHeight='100%';$('viewImage').style.width='auto';$('viewImage').style.height='auto';$('fullBtn').textContent='Fit';}else{$('viewImage').style.maxWidth='none';$('viewImage').style.maxHeight='none';$('viewImage').style.width='auto';$('viewImage').style.height='auto';$('fullBtn').textContent='Fit screen';}};
+  $('fullBtn').onclick=()=>{fitMode=!fitMode;$('viewImage').style.maxWidth=fitMode?'100%':'none';$('viewImage').style.maxHeight=fitMode?'100%':'none';$('fullBtn').textContent=fitMode?'Fit':'Fit screen';};
   window.addEventListener('popstate',()=>{if(viewerOpen)closeViewer(false);});
   document.addEventListener('keydown',e=>{if(e.key==='Escape'&&viewerOpen)closeViewer(true);});
+
+  function blobToDataURL(blob){return new Promise((resolve,reject)=>{const r=new FileReader();r.onload=()=>resolve(r.result);r.onerror=reject;r.readAsDataURL(blob);});}
+  function downloadBlob(blob,name){const a=document.createElement('a'),url=URL.createObjectURL(blob);a.href=url;a.download=name;document.body.append(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(url),1500);}
   $('exportBtn').onclick=async()=>{
     try{
-      const data=await Promise.all(items.map(async x=>({id:x.id,title:x.title,originalName:x.originalName||x.sourceName||'',category:x.category,createdAt:x.createdAt,updatedAt:x.updatedAt,mime:x.image.type||'image/png',imageData:await blobToDataURL(x.image)})));
-      const blob=new Blob([JSON.stringify({format:'infographic-library-backup',version:1,exportedAt:new Date().toISOString(),items:data},null,2)],{type:'application/json'});
-      downloadBlob(blob,'infographic-library-backup.json');
-    }catch(e){alert('Could not create backup. Try exporting fewer or smaller images.');}
+      const backupItems=[];
+      for(const x of items){const blob=imageBlob(x);backupItems.push({id:x.id,title:x.title||'',originalName:x.originalName||x.sourceName||'',subtitle:x.subtitle||'',category:x.category||'General',createdAt:x.createdAt||Date.now(),updatedAt:x.updatedAt||Date.now(),mime:blob?.type||'image/png',imageData:blob?await blobToDataURL(blob):null});}
+      downloadBlob(new Blob([JSON.stringify({format:'infographic-library-backup',version:2,exportedAt:new Date().toISOString(),items:backupItems,customCategories},null,2)],{type:'application/json'}),'infographic-library-backup.json');
+    }catch(e){alert('Could not create the backup. Try exporting fewer or smaller images.');}
   };
-  function blobToDataURL(blob){return new Promise((resolve,reject)=>{const r=new FileReader();r.onload=()=>resolve(r.result);r.onerror=reject;r.readAsDataURL(blob);});}
-  function downloadBlob(blob,name){const a=document.createElement('a');const u=URL.createObjectURL(blob);a.href=u;a.download=name;document.body.append(a);a.click();a.remove();setTimeout(()=>URL.revokeObjectURL(u),1500);}
   $('importBtn').onclick=()=>$('importFile').click();
   $('importFile').onchange=async e=>{
     const file=e.target.files[0];if(!file)return;
     try{
-      const backup=JSON.parse(await file.text());
-      if(backup.format!=='infographic-library-backup'||!Array.isArray(backup.items))throw new Error('format');
-      if(!confirm(`Import ${backup.items.length} infographic(s)? Items with the same IDs will be replaced.`))return;
+      const backup=JSON.parse(await file.text());if(backup.format!=='infographic-library-backup'||!Array.isArray(backup.items))throw new Error('Invalid backup');
+      if(!confirm(`Import ${backup.items.length} item(s)? Matching IDs will be replaced; other items remain.`))return;
+      if(Array.isArray(backup.customCategories)){customCategories=[...new Set([...customCategories,...backup.customCategories])];localStorage.setItem('infographic-custom-categories',JSON.stringify(customCategories));}
       for(const x of backup.items){
-        if(!x.title||!x.category||!x.imageData)continue;
-        const res=await fetch(x.imageData),blob=await res.blob();
-        await putItem({id:x.id||('inf-'+Date.now()+'-'+Math.random().toString(36).slice(2,8)),title:x.title,originalName:x.originalName||'',category:x.category,image:blob,createdAt:x.createdAt||Date.now(),updatedAt:Date.now()});
+        if(!x.id||!x.imageData)continue;
+        const blob=await (await fetch(x.imageData)).blob();
+        await putItem({id:x.id,title:x.title||'',originalName:x.originalName||'',subtitle:x.subtitle||'',category:x.category||'General',image:blob,createdAt:x.createdAt||Date.now(),updatedAt:Date.now()});
       }
       await refresh();alert('Backup imported successfully.');
-    }catch(err){alert('This backup file could not be read. Please choose a backup exported from this app.');}
+    }catch(err){console.error(err);alert('This backup could not be read. Choose a backup exported by this app.');}
     finally{$('importFile').value='';}
   };
-  (async()=>{try{db=await openDB();await refresh();}catch(e){$('summary').textContent='Your browser does not support local storage for this app. Please open it in a recent Safari or Chrome browser.';list.innerHTML='<div class="empty">Could not open the infographic library.</div>';}})();
+
+  (async()=>{try{db=await openDB();await refresh();}catch(err){console.error(err);$('summary').textContent='Could not open the local library database.';list.innerHTML='<div class="empty">Try opening this app in the same browser where you originally saved your infographics.</div>';}})();
 })();
 </script>
 </body>
