@@ -68,6 +68,8 @@ dialog::backdrop{background:#11182788}
   </div>
   <div class="buttons">
     <button class="btn" id="addBtn">＋ Add infographic</button>
+    <button class="btn secondary" id="batchBtn">Import multiple photos</button>
+    <input id="batchFiles" type="file" accept="image/*" multiple hidden>
     <button class="btn secondary" id="exportBtn">Export backup</button>
     <button class="btn secondary" id="importBtn">Import backup</button>
     <input id="importFile" type="file" accept=".json,application/json" hidden>
@@ -81,10 +83,20 @@ dialog::backdrop{background:#11182788}
   <div class="modal-head"><h2 id="dialogTitle">Add infographic</h2><button class="close-x" id="closeDialog" aria-label="Close">×</button></div>
   <form id="editForm" class="modal-body">
     <div class="field"><label for="title">Infographic name *</label><input id="title" maxlength="120" required placeholder="e.g. Simple Daily Exercise"></div>
-    <div class="field"><label for="category">Category *</label><input id="category" maxlength="60" required list="categories" placeholder="e.g. Health, Learning, Apps"><datalist id="categories"></datalist></div>
+    <div class="field"><label for="category">Category *</label><div style="display:flex;gap:8px"><select id="category" required style="flex:1"><option value="Self-help">Self-help</option><option value="Exercise">Exercise</option><option value="General">General</option></select><button type="button" class="btn secondary" id="newCategoryBtn">＋ New</button></div><div class="help">Choose a category. Use “New” only when you want to add another category.</div></div>
     <div class="field"><label for="imageFile">Choose infographic image *</label><input id="imageFile" type="file" accept="image/*"><div class="help" id="fileHelp">Choose an image from Photos or Files. Existing image stays if you are only editing the name or category.</div></div>
     <div class="modal-actions"><button type="button" class="btn secondary" id="cancelEdit">Cancel</button><button class="btn" type="submit" id="saveBtn">Save infographic</button></div>
   </form>
+</dialog>
+
+<dialog id="batchDialog">
+  <div class="modal-head"><h2>Import multiple photos</h2><button class="close-x" id="closeBatch" aria-label="Close">×</button></div>
+  <div class="modal-body">
+    <p id="batchCount">Photos selected</p>
+    <div class="field"><label for="batchCategory">Category for these photos</label><select id="batchCategory" style="width:100%"><option value="Self-help">Self-help</option><option value="Exercise">Exercise</option><option value="General">General</option></select></div>
+    <p class="help">Each photo becomes its own entry. The filename is used as the initial title when available; you can edit titles later.</p>
+    <div class="modal-actions"><button class="btn secondary" id="cancelBatch">Cancel</button><button class="btn" id="confirmBatch">Import photos</button></div>
+  </div>
 </dialog>
 
 <div id="viewer" role="dialog" aria-modal="true" aria-label="Infographic viewer">
@@ -96,7 +108,9 @@ dialog::backdrop{background:#11182788}
 <script>
 (() => {
   const DB_NAME='infographic-library-db', DB_VERSION=1, STORE='items';
-  let db, items=[], editingId=null, currentObjectUrl=null, viewerOpen=false, fitMode=true;
+  let db, items=[], editingId=null, currentObjectUrl=null, viewerOpen=false, fitMode=true, batchSelection=[];
+  let customCategories = JSON.parse(localStorage.getItem('infographic-custom-categories') || '[]');
+  const baseCategories = ['Self-help','Exercise','General'];
   const $=id=>document.getElementById(id);
   const list=$('list'), dialog=$('editDialog'), form=$('editForm');
   const openDB=()=>new Promise((resolve,reject)=>{
@@ -111,9 +125,27 @@ dialog::backdrop{background:#11182788}
   function blobUrl(blob){return URL.createObjectURL(blob);}
   async function refresh(){
     items=await allItems();
-    const cats=[...new Set(items.map(x=>x.category).filter(Boolean))].sort((a,b)=>a.localeCompare(b));
-    $('categories').innerHTML=cats.map(c=>`<option value="${esc(c)}"></option>`).join('');
+    const cats=[...new Set([...baseCategories,...customCategories,...items.map(x=>x.category).filter(Boolean)])].sort((a,b)=>a.localeCompare(b));
+    populateCategorySelect($('category'), cats);
+    populateCategorySelect($('batchCategory'), cats);
     render();
+  }
+  function populateCategorySelect(select, cats){
+    if(!select) return;
+    const previous=select.value;
+    select.innerHTML=cats.map(c=>`<option value="${esc(c)}">${esc(c)}</option>`).join('');
+    if(cats.includes(previous)) select.value=previous;
+  }
+  function createCategory(){
+    const name=prompt('New category name:');
+    if(!name || !name.trim()) return;
+    const clean=name.trim();
+    if(clean.length>60){alert('Please keep category names to 60 characters or fewer.');return;}
+    if(![...baseCategories,...customCategories].some(c=>c.toLocaleLowerCase()===clean.toLocaleLowerCase())){
+      customCategories.push(clean);
+      localStorage.setItem('infographic-custom-categories',JSON.stringify(customCategories));
+    }
+    refresh().then(()=>{$('category').value=clean;$('batchCategory').value=clean;});
   }
   async function thumbnail(blob){
     if(!blob)return '';
@@ -145,7 +177,12 @@ dialog::backdrop{background:#11182788}
     editingId=id;form.reset();$('fileHelp').textContent='Choose an image from Photos or Files. Existing image stays if you are only editing the name or category.';
     const item=id?items.find(x=>x.id===id):null;
     $('dialogTitle').textContent=item?'Edit infographic':'Add infographic';
-    $('title').value=item?.title||'';$('category').value=item?.category||'';
+    $('title').value=item?.title||'';
+    if(item && item.category && ![...baseCategories,...customCategories].includes(item.category)){
+      customCategories.push(item.category);localStorage.setItem('infographic-custom-categories',JSON.stringify(customCategories));
+    }
+    populateCategorySelect($('category'), [...new Set([...baseCategories,...customCategories,...items.map(x=>x.category).filter(Boolean)])]);
+    $('category').value=item?.category||'General';
     $('imageFile').required=!item;
     $('saveBtn').textContent=item?'Save changes':'Save infographic';
     dialog.showModal();setTimeout(()=>$('title').focus(),50);
@@ -169,6 +206,32 @@ dialog::backdrop{background:#11182788}
     }catch(err){alert('Could not save this image. Your browser may be out of storage. Try a smaller image.');}
     finally{$('saveBtn').disabled=false;$('saveBtn').textContent=old?'Save changes':'Save infographic';}
   });
+  $('newCategoryBtn').onclick=createCategory;
+  $('batchBtn').onclick=()=>$('batchFiles').click();
+  $('batchFiles').onchange=e=>{
+    batchSelection=Array.from(e.target.files||[]).filter(f=>f.type.startsWith('image/'));
+    if(!batchSelection.length){e.target.value='';return;}
+    $('batchCount').textContent=`${batchSelection.length} photo${batchSelection.length===1?'':'s'} selected`;
+    populateCategorySelect($('batchCategory'), [...new Set([...baseCategories,...customCategories,...items.map(x=>x.category).filter(Boolean)])]);
+    $('batchCategory').value='General';
+    $('batchDialog').showModal();
+  };
+  function cancelBatch(){ $('batchDialog').close();$('batchFiles').value='';batchSelection=[]; }
+  $('closeBatch').onclick=$('cancelBatch').onclick=cancelBatch;
+  $('batchDialog').addEventListener('click',e=>{if(e.target===$('batchDialog'))cancelBatch();});
+  $('confirmBatch').onclick=async()=>{
+    if(!batchSelection.length)return;
+    const button=$('confirmBatch');button.disabled=true;button.textContent='Importing…';
+    try{
+      const category=$('batchCategory').value||'General';
+      for(const file of batchSelection){
+        const filename=file.name.replace(/\.[^.]+$/,'').replace(/[_-]+/g,' ').trim();
+        await putItem({id:'inf-'+Date.now()+'-'+Math.random().toString(36).slice(2,9),title:filename||'Untitled infographic',category,image:file,createdAt:Date.now(),updatedAt:Date.now()});
+      }
+      cancelBatch();await refresh();alert('Photos imported. You can edit each title whenever you are ready.');
+    }catch(err){alert('Some photos could not be imported. Try selecting fewer or smaller images.');}
+    finally{button.disabled=false;button.textContent='Import photos';}
+  };
   $('addBtn').onclick=()=>showEditor();
   $('closeDialog').onclick=$('cancelEdit').onclick=()=>dialog.close();
   dialog.addEventListener('click',e=>{if(e.target===dialog)dialog.close();});
