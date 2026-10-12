@@ -109,7 +109,7 @@ dialog::backdrop{background:#11182788}
 <script>
 (() => {
   'use strict';
-  const DB_NAME='infographic-library-db', DB_VERSION=1, STORE='items';
+  const DB_NAME='infographic-library-db', DB_VERSION=2, STORE='items', META='metadata';
   const $=id=>document.getElementById(id);
   const baseCategories=['Self-help','Exercise','General'];
   let db=null, items=[], editingId=null, batchSelection=[], currentObjectUrl=null, viewerOpen=false, fitMode=true;
@@ -120,12 +120,30 @@ dialog::backdrop{background:#11182788}
   function esc(s){return String(s??'').replace(/[&<>"']/g,c=>({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));}
   function openDB(){return new Promise((resolve,reject)=>{
     const req=indexedDB.open(DB_NAME,DB_VERSION);
-    req.onupgradeneeded=()=>{if(!req.result.objectStoreNames.contains(STORE))req.result.createObjectStore(STORE,{keyPath:'id'});};
+    req.onupgradeneeded=()=>{
+      const d=req.result;
+      if(!d.objectStoreNames.contains(STORE))d.createObjectStore(STORE,{keyPath:'id'});
+      if(!d.objectStoreNames.contains(META))d.createObjectStore(META,{keyPath:'id'});
+    };
     req.onsuccess=()=>resolve(req.result);req.onerror=()=>reject(req.error);
   });}
-  function allItems(){return new Promise((resolve,reject)=>{const r=db.transaction(STORE,'readonly').objectStore(STORE).getAll();r.onsuccess=()=>resolve(r.result||[]);r.onerror=()=>reject(r.error);});}
+  function allItems(){return new Promise((resolve,reject)=>{
+    const tx=db.transaction([STORE,META],'readonly');
+    const r=tx.objectStore(STORE).getAll(), m=tx.objectStore(META).getAll();
+    tx.oncomplete=()=>{
+      const metaById=new Map((m.result||[]).map(x=>[x.id,x]));
+      resolve((r.result||[]).map(item=>({...item,...(metaById.get(item.id)||{})})));
+    };
+    tx.onerror=()=>reject(tx.error);
+  });}
   function putItem(item){return new Promise((resolve,reject)=>{
     const tx=db.transaction(STORE,'readwrite');tx.objectStore(STORE).put(item);tx.oncomplete=resolve;tx.onerror=()=>reject(tx.error);tx.onabort=()=>reject(tx.error||new Error('Save aborted'));
+  });}
+  // Store user-editable metadata separately. This avoids rewriting the image Blob
+  // when the user changes only a subtitle or category.
+  function putMetadata(meta){return new Promise((resolve,reject)=>{
+    const tx=db.transaction(META,'readwrite');tx.objectStore(META).put(meta);
+    tx.oncomplete=resolve;tx.onerror=()=>reject(tx.error);tx.onabort=()=>reject(tx.error||new Error('Metadata save aborted'));
   });}
   function deleteItem(id){return new Promise((resolve,reject)=>{const tx=db.transaction(STORE,'readwrite');tx.objectStore(STORE).delete(id);tx.oncomplete=resolve;tx.onerror=()=>reject(tx.error);});}
   function allCategories(){return [...new Set([...baseCategories,...customCategories,...items.map(x=>x.category).filter(Boolean)])].sort((a,b)=>a.localeCompare(b));}
@@ -191,17 +209,24 @@ dialog::backdrop{background:#11182788}
     if(file&&!file.type.startsWith('image/')){alert('Please choose an image file.');return;}
     const button=$('saveBtn');button.disabled=true;button.textContent='Saving…';
     try{
-      const image=file?file:imageBlob(old);
-      if(!image){alert('The existing image is missing from this entry. Please choose the original photo again.');return;}
-      // Keep all existing fields and the original image when editing. Only subtitle/category change.
-      const record=old?{...old,subtitle,category,updatedAt:Date.now()}:{
-        id:'inf-'+Date.now()+'-'+Math.random().toString(36).slice(2,9),
-        title:file.name||'Imported photo', originalName:file.name||'Imported photo',
-        subtitle,category,image,createdAt:Date.now(),updatedAt:Date.now()
-      };
-      await putItem(record);
+      if(old && !file){
+        // Only write subtitle/category metadata; do not touch the existing image record.
+        await putMetadata({id:old.id,subtitle,category,updatedAt:Date.now()});
+      } else {
+        const image=file;
+        if(!image){alert('Please choose the infographic image.');return;}
+        const record={
+          id:old ? old.id : ('inf-'+Date.now()+'-'+Math.random().toString(36).slice(2,9)),
+          title:old?.title || file.name || 'Imported photo',
+          originalName:old?.originalName || old?.sourceName || file.name || 'Imported photo',
+          subtitle,category,image,
+          createdAt:old?.createdAt || Date.now(),updatedAt:Date.now()
+        };
+        await putItem(record);
+        if(old) await putMetadata({id:old.id,subtitle,category,updatedAt:Date.now()});
+      }
       dialog.close();await refresh();
-    }catch(err){console.error(err);alert('Could not save. Your existing image has not intentionally been replaced. Try again.');}
+    }catch(err){console.error('Infographic save failed:',err);alert('Could not save the subtitle/category. The original image record was not changed. Please refresh and try again.');}
     finally{button.disabled=false;button.textContent=editingId?'Save changes':'Add infographic';}
   });
   $('addBtn').onclick=()=>showEditor();
