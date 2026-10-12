@@ -82,7 +82,7 @@ dialog::backdrop{background:#11182788}
 <dialog id="editDialog">
   <div class="modal-head"><h2 id="dialogTitle">Add infographic</h2><button class="close-x" id="closeDialog" aria-label="Close">×</button></div>
   <form id="editForm" class="modal-body">
-    <div class="field"><label for="title">Infographic name *</label><input id="title" maxlength="120" required placeholder="e.g. Simple Daily Exercise"></div>
+    <div class="field"><label for="title">Infographic name *</label><input id="title" maxlength="120" required placeholder="e.g. Simple Daily Exercise"><div class="help">Enter a meaningful title. The image itself is kept when you change only this field.</div></div>
     <div class="field"><label for="category">Category *</label><div style="display:flex;gap:8px"><select id="category" required style="flex:1"><option value="Self-help">Self-help</option><option value="Exercise">Exercise</option><option value="General">General</option></select><button type="button" class="btn secondary" id="newCategoryBtn">＋ New</button></div><div class="help">Choose a category. Use “New” only when you want to add another category.</div></div>
     <div class="field"><label for="imageFile">Replace infographic image (optional)</label><input id="imageFile" type="file" accept="image/*"><div class="help" id="fileHelp">When editing a title or category, leave this empty to keep the existing image. Choose a new image only if you want to replace it.</div></div>
     <div class="modal-actions"><button type="button" class="btn secondary" id="cancelEdit">Cancel</button><button class="btn" type="submit" id="saveBtn">Save infographic</button></div>
@@ -165,7 +165,7 @@ dialog::backdrop{background:#11182788}
       const card=document.createElement('article');card.className='item';
       const btn=document.createElement('button');btn.className='open-item';btn.type='button';btn.setAttribute('aria-label','Open '+item.title);
       const img=document.createElement('img');img.className='thumb';img.alt='';img.src=await thumbnail(item.image);
-      const info=document.createElement('div');info.innerHTML=`<div class="item-title">${esc(item.title)}</div><span class="category">${esc(item.category)}</span>`;
+      const info=document.createElement('div');info.innerHTML=`<div class="item-title">${esc(item.title||'Untitled infographic')}</div><div class="help">Original: ${esc(item.originalName||item.sourceName||'Imported photo')}</div><span class="category">${esc(item.category)}</span>`;
       btn.append(img,info);btn.addEventListener('click',()=>openViewer(item.id));
       const actions=document.createElement('div');actions.className='item-actions';
       const edit=document.createElement('button');edit.className='btn secondary small';edit.textContent='Edit';edit.onclick=()=>showEditor(item.id);
@@ -174,10 +174,11 @@ dialog::backdrop{background:#11182788}
     }
   }
   function showEditor(id=null){
-    editingId=id;form.reset();$('fileHelp').textContent='Choose an image from Photos or Files. Existing image stays if you are only editing the name or category.';
+    editingId=id;form.reset();$('fileHelp').textContent='Choose a new image only if you want to replace the current infographic. Leave this empty to keep the current image.';
     const item=id?items.find(x=>x.id===id):null;
     $('dialogTitle').textContent=item?'Edit infographic':'Add infographic';
     $('title').value=item?.title||'';
+    $('originalName').value=item?.originalName || item?.sourceName || '(original filename not recorded)';
     if(item && item.category && ![...baseCategories,...customCategories].includes(item.category)){
       customCategories.push(item.category);localStorage.setItem('infographic-custom-categories',JSON.stringify(customCategories));
     }
@@ -196,6 +197,7 @@ dialog::backdrop{background:#11182788}
     const title=$('title').value.trim(),category=$('category').value.trim(),file=$('imageFile').files[0];
     if(!title||!category){alert('Please enter a name and category.');return;}
     const old=editingId?items.find(x=>x.id===editingId):null;
+    if(editingId && !old){alert('This catalog entry could not be found. Please close the editor and try again.');return;}
     if(!old&&!file){alert('Please choose an infographic image.');return;}
     if(file&&!file.type.startsWith('image/')){alert('Please choose an image file.');return;}
     $('saveBtn').disabled=true;$('saveBtn').textContent='Saving…';
@@ -267,7 +269,7 @@ dialog::backdrop{background:#11182788}
   document.addEventListener('keydown',e=>{if(e.key==='Escape'&&viewerOpen)closeViewer(true);});
   $('exportBtn').onclick=async()=>{
     try{
-      const data=await Promise.all(items.map(async x=>({id:x.id,title:x.title,category:x.category,createdAt:x.createdAt,updatedAt:x.updatedAt,mime:x.image.type||'image/png',imageData:await blobToDataURL(x.image)})));
+      const data=await Promise.all(items.map(async x=>({id:x.id,title:x.title,originalName:x.originalName||x.sourceName||'',category:x.category,createdAt:x.createdAt,updatedAt:x.updatedAt,mime:x.image.type||'image/png',imageData:await blobToDataURL(x.image)})));
       const blob=new Blob([JSON.stringify({format:'infographic-library-backup',version:1,exportedAt:new Date().toISOString(),items:data},null,2)],{type:'application/json'});
       downloadBlob(blob,'infographic-library-backup.json');
     }catch(e){alert('Could not create backup. Try exporting fewer or smaller images.');}
@@ -284,7 +286,7 @@ dialog::backdrop{background:#11182788}
       for(const x of backup.items){
         if(!x.title||!x.category||!x.imageData)continue;
         const res=await fetch(x.imageData),blob=await res.blob();
-        await putItem({id:x.id||('inf-'+Date.now()+'-'+Math.random().toString(36).slice(2,8)),title:x.title,category:x.category,image:blob,createdAt:x.createdAt||Date.now(),updatedAt:Date.now()});
+        await putItem({id:x.id||('inf-'+Date.now()+'-'+Math.random().toString(36).slice(2,8)),title:x.title,originalName:x.originalName||'',category:x.category,image:blob,createdAt:x.createdAt||Date.now(),updatedAt:Date.now()});
       }
       await refresh();alert('Backup imported successfully.');
     }catch(err){alert('This backup file could not be read. Please choose a backup exported from this app.');}
