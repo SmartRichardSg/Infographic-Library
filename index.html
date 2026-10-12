@@ -32,6 +32,8 @@ input,select{width:100%;padding:12px;border:1px solid var(--line);border-radius:
 .open-item{display:flex;gap:12px;width:100%;text-align:left;border:0;background:transparent;padding:12px;color:inherit;align-items:center}
 .thumb{width:112px;height:126px;flex:0 0 112px;object-fit:contain;object-position:center;border-radius:9px;background:#edf1f7}
 .item-title{font-weight:750;line-height:1.3;overflow-wrap:anywhere}
+.inline-name{font:inherit;font-weight:700;padding:9px 10px;border:1px solid var(--line);border-radius:10px;width:100%;min-width:0;background:#fff;color:var(--ink)}
+.name-save{margin-top:7px}
 .original{font-size:11px;color:var(--muted);margin-top:5px;overflow-wrap:anywhere}
 .category{display:inline-block;background:var(--soft);color:#3157a4;border-radius:20px;padding:3px 8px;font-size:12px;margin-top:7px}
 .item-actions{display:flex;gap:7px;padding:0 12px 12px 136px;flex-wrap:wrap}
@@ -163,16 +165,28 @@ dialog::backdrop{background:#11182788}
     list.innerHTML='';
     filtered.forEach(item=>{
       const card=document.createElement('article');card.className='item';
-      const open=document.createElement('button');open.className='open-item';open.type='button';open.setAttribute('aria-label','Open '+(item.subtitle||'infographic'));
-      const img=document.createElement('img');img.className='thumb';img.alt='Infographic thumbnail';
+      const open=document.createElement('div');open.className='open-item';
+      const img=document.createElement('img');img.className='thumb';img.alt='Open infographic';img.style.cursor='pointer';
       const blob=imageBlob(item);
       if(blob)img.src=makeUrl(blob);else{img.alt='Image unavailable';img.style.display='none';}
-      const info=document.createElement('div');
-      const subtitle=document.createElement('div');subtitle.className='item-title';subtitle.textContent=item.subtitle||'＋ Add subtitle';
-      const ref=document.createElement('div');ref.className='original';ref.textContent='Original reference preserved';
+      img.addEventListener('click',()=>openViewer(item.id));
+      const info=document.createElement('div');info.style.flex='1';info.style.minWidth='0';
+      const nameInput=document.createElement('input');nameInput.className='inline-name';nameInput.type='text';nameInput.maxLength=120;
+      nameInput.placeholder='Type infographic name…';nameInput.value=item.subtitle||'';nameInput.setAttribute('aria-label','Infographic name');
+      const saveName=document.createElement('button');saveName.className='btn secondary small name-save';saveName.type='button';saveName.textContent='Save name';
+      saveName.addEventListener('click',async()=>{
+        const value=nameInput.value.trim();
+        saveName.disabled=true;saveName.textContent='Saving…';
+        try{
+          // Isolated metadata write: never rewrite the image record.
+          await putMetadata({id:item.id,subtitle:value,category:item.category||'General',updatedAt:Date.now()});
+          await refresh();
+        }catch(err){console.error('Name save failed:',err);alert('Could not save this name. The image itself was not changed. Refresh the page and try again.');}
+        finally{saveName.disabled=false;saveName.textContent='Save name';}
+      });
+      const ref=document.createElement('div');ref.className='original';ref.textContent='Original image kept unchanged';
       const cat=document.createElement('span');cat.className='category';cat.textContent=item.category||'General';
-      info.append(subtitle,ref,cat);open.append(img,info);
-      open.addEventListener('click',()=>openViewer(item.id));
+      info.append(nameInput,saveName,ref,cat);open.append(img,info);
       const actions=document.createElement('div');actions.className='item-actions';
       const edit=document.createElement('button');edit.className='btn secondary small';edit.textContent='Edit';edit.onclick=()=>showEditor(item.id);
       const del=document.createElement('button');del.className='btn danger small';del.textContent='Delete';del.onclick=async()=>{if(confirm('Delete this infographic from the library?')){await deleteItem(item.id);await refresh();}};
